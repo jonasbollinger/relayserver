@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -72,22 +71,16 @@ public partial class RelayWebTarget<TRequest, TResponse> : IRelayTarget<TRequest
 	public void Dispose()
 		=> HttpClient.Dispose();
 
-	[LoggerMessage(10700, LogLevel.Trace, "Requesting target for request {RelayRequestId} at {BaseAddress} for {Url}")]
-	partial void LogRequestingTarget(Guid relayRequestId, Uri? baseAddress, string url);
-
-	[LoggerMessage(10701, LogLevel.Debug, "Requested target for request {RelayRequestId} returned {HttpStatusCode}")]
-	partial void LogRequestedTarget(Guid relayRequestId, HttpStatusCode httpStatusCode);
-
 	/// <inheritdoc />
 	public virtual async Task<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken = default)
 	{
-		LogRequestingTarget(request.RequestId, HttpClient.BaseAddress, request.Url);
+		Log.RequestingTarget(_logger, request.RequestId, HttpClient.BaseAddress, request.Url);
 
 		var requestMessage = CreateHttpRequestMessage(request);
 		var responseMessage =
 			await HttpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
-		LogRequestedTarget(request.RequestId, responseMessage.StatusCode);
+		Log.RequestedTarget(_logger, request.RequestId, responseMessage.StatusCode);
 		return await responseMessage.CreateResponseAsync<TResponse>(request, cancellationToken);
 	}
 

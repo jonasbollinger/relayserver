@@ -63,13 +63,11 @@ public partial class ClientRequestHandler<TRequest, TResponse, TAcknowledge> : I
 			request.EnableTracing);
 	}
 
-	[LoggerMessage(10400, LogLevel.Debug, "Acknowledging request {RelayRequestId} on origin {OriginId}")]
-	partial void LogAcknowledgeRequest(Guid relayRequestId, Guid? originId);
 
 	/// <inheritdoc />
 	public async Task AcknowledgeRequestAsync(TRequest request, bool removeRequestBodyContent)
 	{
-		LogAcknowledgeRequest(request.RequestId, request.AcknowledgeOriginId);
+		Log.AcknowledgeRequest(_logger, request.RequestId, request.AcknowledgeOriginId);
 		await _acknowledgeTransport.TransportAsync(request.CreateAcknowledge<TAcknowledge>(removeRequestBodyContent));
 	}
 
@@ -106,16 +104,13 @@ public partial class ClientRequestHandler<TRequest, TResponse, TAcknowledge> : I
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(10401, ex, "An error occured during handling of request {RelayRequestId}", request.RequestId);
+			Log.ErrorHandlingRequest(_logger, ex, request.RequestId);
 		}
 	}
 
-	[LoggerMessage(10402, LogLevel.Debug, "Delivering response for request {RelayRequestId}")]
-	partial void LogDeliverResponse(Guid relayRequestId);
-
 	private async Task DeliverResponseAsync(TResponse response, bool enableTracing)
 	{
-		LogDeliverResponse(response.RequestId);
+		Log.DeliverResponse(_logger, response.RequestId);
 
 		if (enableTracing)
 		{
